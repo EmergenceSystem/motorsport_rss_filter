@@ -1,0 +1,15 @@
+[package]
+name = "motorsport_rss_filter"
+version = "0.1.0"
+edition = "2021"
+license-file="LICENSE"
+
+[profile.dev]
+opt-level = 3
+
+[profile.release]
+opt-level = 3 
+
+[dependencies]
+actix-web="4.0"
+rss_filter = { git = "ssh://git@github.com/EmergenceSystem/rss_filter.git" }
