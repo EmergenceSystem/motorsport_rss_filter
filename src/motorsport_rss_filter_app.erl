@@ -1,24 +1,33 @@
+%%%-------------------------------------------------------------------
+%%% @doc Motorsport RSS filter.
+%%%
+%%% Delegates to rss_filter_app after copying this application's
+%%% priv/rss_config.json to the working directory where
+%%% rss_filter_app expects to find it.
+%%% @end
+%%%-------------------------------------------------------------------
 -module(motorsport_rss_filter_app).
 -behaviour(application).
 
 -export([start/2, stop/1]).
 
 start(_StartType, _StartArgs) ->
-    ConfigPath = case code:priv_dir(motorsport_rss_filter) of
-        {error, bad_name} -> "rss_config.json";
-        PrivDir -> filename:join([PrivDir, "rss_config.json"])
-    end,
-    case file:read_file(ConfigPath) of
+    ConfigPath = priv_config_path(motorsport_rss_filter),
+    case file:copy(ConfigPath, "rss_config.json") of
         {ok, _} ->
-            application:ensure_all_started(rss_filter),
-            {ok, Port} = em_filter:find_port(),
-            em_filter_sup:start_link(rss_filter, rss_filter_app, Port);
+            em_filter:start_filter(rss_filter, rss_filter_app);
         {error, enoent} when ConfigPath =/= "rss_config.json" ->
-            start(normal, []);
+            %% priv not found — try CWD fallback (dev mode)
+            em_filter:start_filter(rss_filter, rss_filter_app);
         {error, Reason} ->
             {error, {config_error, Reason}}
     end.
 
 stop(_State) ->
-    ok.
+    em_filter:stop_filter(rss_filter).
 
+priv_config_path(App) ->
+    case code:priv_dir(App) of
+        {error, bad_name} -> "rss_config.json";
+        PrivDir           -> filename:join(PrivDir, "rss_config.json")
+    end.
