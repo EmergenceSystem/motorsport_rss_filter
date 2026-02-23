@@ -1,33 +1,44 @@
 %%%-------------------------------------------------------------------
-%%% @doc Motorsport RSS filter.
+%%% @doc Motorsport RSS filter application.
 %%%
-%%% Delegates to rss_filter_app after copying this application's
-%%% priv/rss_config.json to the working directory where
-%%% rss_filter_app expects to find it.
-%%% @end
+%%% Responsibility:
+%%%   - copy priv/rss_config.json to working directory
+%%%   - start rss_filter application
+%%%
+%%% rss_filter handles em_filter internally.
 %%%-------------------------------------------------------------------
 -module(motorsport_rss_filter_app).
+
 -behaviour(application).
 
 -export([start/2, stop/1]).
 
+%%====================================================================
+%% Application callbacks
+%%====================================================================
+
 start(_StartType, _StartArgs) ->
-    ConfigPath = priv_config_path(motorsport_rss_filter),
-    case file:copy(ConfigPath, "rss_config.json") of
-        {ok, _} ->
-            em_filter:start_filter(rss_filter, rss_filter_app);
-        {error, enoent} when ConfigPath =/= "rss_config.json" ->
-            %% priv not found — try CWD fallback (dev mode)
-            em_filter:start_filter(rss_filter, rss_filter_app);
-        {error, Reason} ->
-            {error, {config_error, Reason}}
-    end.
+    copy_config(),
+    application:ensure_all_started(rss_filter),
+    {ok, self()}.
 
 stop(_State) ->
-    em_filter:stop_filter(rss_filter).
+    ok.
 
-priv_config_path(App) ->
-    case code:priv_dir(App) of
-        {error, bad_name} -> "rss_config.json";
-        PrivDir           -> filename:join(PrivDir, "rss_config.json")
+%%====================================================================
+%% Internal
+%%====================================================================
+
+copy_config() ->
+    case code:priv_dir(motorsport_rss_filter) of
+
+        %% running in release
+        PrivDir when is_list(PrivDir) ->
+            Src = filename:join(PrivDir, "rss_config.json"),
+            file:copy(Src, "rss_config.json"),
+            ok;
+
+        %% running in dev mode
+        {error, bad_name} ->
+            ok
     end.
