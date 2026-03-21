@@ -20,6 +20,10 @@
 start(_StartType, _StartArgs) ->
     copy_config(),
     application:ensure_all_started(rss_filter),
+    em_filter:start_agent(motorsport_rss_filter, rss_filter_app, #{
+        capabilities => rss_filter_app:base_capabilities()
+                        ++ [<<"motorsport">>, <<"f1">>, <<"rally">>, <<"wrc">>]
+    }),
     {ok, self()}.
 
 stop(_State) ->
