@@ -1,15 +1,23 @@
 {application, motorsport_rss_filter, [
     {description, "rss_filter example for Motorsport.com"},
-    {vsn, "0.1.0"},
-    {registered, []},
+    {vsn, "0.2.0"},
+    {registered, [motorsport_rss_filter_sup, motorsport_rss_filter_server]},
     {mod, {motorsport_rss_filter_app, []}},
     {applications, [
+        cowboy,
         kernel,
         stdlib,
         rss_filter
     ]},
-    {env, []},
-    {modules, []},
+    {env, [
+        {pop_port,   0},
+        {query_port, 0},
+        {pop_seeds,  []}
+    ]},
+    {modules, [
+        motorsport_rss_filter_sup,
+        motorsport_rss_filter_server
+    ]},
     {licenses, ["Apache-2.0"]},
     {links, [{"GitHub", "https://github.com/EmergenceSystem/motorsport_rss_filter"}]}
 ]}.
